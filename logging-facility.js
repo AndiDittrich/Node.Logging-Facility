@@ -1,14 +1,17 @@
 // global set of active logging instances/namespaces
 var _loggerInstances = {};
 
+// set of active backends
+var _loggingBackends = [];
+
 // the default logging backend (upstream)
-var _loggingBackend = function(instance, level, args){
+_loggingBackends.push(function(instance, level, args){
     if (level > 5){
         console.log(instance + '~', args.join(' '));
     }else{
         console.error(instance + '~', args.join(' '));
     }
-};
+});
 
 // list of syslog levels
 var LOGLEVEL = {
@@ -32,8 +35,12 @@ var createLogger = function(instance){
             var args = Array.prototype.slice.call(arguments);
 
             // default logging
-            if (_loggingBackend){
-                _loggingBackend.apply(_loggingBackend, [instance, level, args]);
+            if (_loggingBackends.length > 0){
+
+                // trigger backends
+                _loggingBackends.forEach(function(backend){
+                    backend.apply(backend, [instance, level, args]);
+                });
             }else{
                 throw new Error('No Logging Backend defined');
             }
@@ -74,12 +81,18 @@ function getLogger(instance){
     return _loggerInstances[instance];
 }
 
-// set the upstream backend
+// set the upstream backend - for backward compatibility
 function setLoggingBackend(backend){
-    _loggingBackend = backend;
+    _loggingBackends = [backend];
+}
+
+// add multiple upstream backends
+function addLoggingBackend(backend){
+    _loggingBackends.push(backend);
 }
 
 module.exports = {
     getLogger: getLogger,
-    setBackend: setLoggingBackend
+    setBackend: setLoggingBackend,
+    addBackend: addLoggingBackend
 };

@@ -1,6 +1,6 @@
 {
   "name": "logging-facility",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Logging Abstraction Layer for easy backend switching",
   "keywords": [
     "logger",
