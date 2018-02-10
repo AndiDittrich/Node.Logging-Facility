@@ -1,75 +1,64 @@
+const _loglevel = require('./lib/loglevel');
+const _simpleCliLogger = require('./lib/cli-logger');
+const _defaultBackend = _simpleCliLogger();
+const _fancyCliLogger = require('./lib/fancy-cli-logger');
+
 // global set of active logging instances/namespaces
-var _loggerInstances = {};
+const _loggerInstances = {};
 
 // set of active backends
-var _loggingBackends = [];
+let _loggingBackends = [];
 
-// the default logging backend (upstream)
-_loggingBackends.push(function(instance, level, args){
-    if (level > 5){
-        console.log(instance + '~', args.join(' '));
-    }else{
-        console.error(instance + '~', args.join(' '));
-    }
-});
+// utility function to expose logging api
+function exposeAPI(log){
+    return {
+        emerg: log(_loglevel.EMERGENCY),
+        emergency: log(_loglevel.EMERGENCY),
 
-// list of syslog levels
-var LOGLEVEL = {
-    emergency: 0,
-    alert: 1,
-    critical: 2,
-    error: 3,
-    warning: 4,
-    notice: 5,
-    info: 6,
-    debug: 7
-};
+        alert: log(_loglevel.ALERT),
+
+        crit: log(_loglevel.CRITICAL),
+        critical: log(_loglevel.CRITICAL),
+
+        error: log(_loglevel.ERROR),
+        err: log(_loglevel.ERROR),
+
+        warning: log(_loglevel.WARNING),
+        warn: log(_loglevel.WARNING),
+
+        notice: log(_loglevel.NOTICE),
+
+        log: log(_loglevel.INFO),
+        info: log(_loglevel.INFO),
+
+        debug: log(_loglevel.DEBUG)
+    };
+}
 
 // generator to create the logging instance
-var createLogger = function(instance){
+function createLogger(instance){
 
     // generator
     function log(level){
-        return function(){
-            // extract args
-            var args = Array.prototype.slice.call(arguments);
+        return function(...args){
 
-            // default logging
+            // logging backend available ?
             if (_loggingBackends.length > 0){
 
                 // trigger backends
                 _loggingBackends.forEach(function(backend){
                     backend.apply(backend, [instance, level, args]);
                 });
+
+            // use default backend
             }else{
-                throw new Error('No Logging Backend defined');
+                _defaultBackend.apply(_defaultBackend, [instance, level, args]);
             }
         }
     }
     
-    return {
-        emerg: log(LOGLEVEL.emergency),
-        emergency: log(LOGLEVEL.emergency),
-
-        alert: log(LOGLEVEL.alert),
-
-        crit: log(LOGLEVEL.critical),
-        critical: log(LOGLEVEL.critical),
-
-        error: log(LOGLEVEL.error),
-        err: log(LOGLEVEL.error),
-
-        warning: log(LOGLEVEL.warning),
-        warn: log(LOGLEVEL.warning),
-
-        notice: log(LOGLEVEL.notice),
-
-        log: log(LOGLEVEL.info),
-        info: log(LOGLEVEL.info),
-
-        debug: log(LOGLEVEL.debug)
-    };
-};
+    return exposeAPI(log);
+}
 
 // utility function to fetch or create loggers by namespace
 function getLogger(instance){
@@ -81,18 +70,45 @@ function getLogger(instance){
     return _loggerInstances[instance];
 }
 
-// set the upstream backend - for backward compatibility
-function setLoggingBackend(backend){
-    _loggingBackends = [backend];
+// add multiple upstream backends
+function addLoggingBackend(backend, minLoglevel=99){
+    // function or string input supported
+    if (typeof backend === 'function'){
+        _loggingBackends.push(backend);
+
+    // lookup
+    }else{
+        if (backend === 'fancy-cli'){
+            _loggingBackends.push(_fancyCliLogger(minLoglevel));
+        }else if (backend === 'cli'){
+            _loggingBackends.push(_simpleCliLogger(minLoglevel));
+        }else{
+            throw new Error('Unknown backend <' + backend + '>');
+        }
+    }    
 }
 
-// add multiple upstream backends
-function addLoggingBackend(backend){
-    _loggingBackends.push(backend);
+// set the upstream backend - for backward compatibility
+function setLoggingBackend(backend){
+    // clear backend list
+    _loggingBackends = [];
+
+    // add new backend
+    addLoggingBackend(backend);
 }
 
 module.exports = {
     getLogger: getLogger,
     setBackend: setLoggingBackend,
-    addBackend: addLoggingBackend
+    addBackend: addLoggingBackend,
+
+    // export loglevel constants
+    LEVEL: _loglevel,
+
+    // build-in backends/loggers
+    LOGGER: {
+        FANCY: _fancyCliLogger,
+        DEFAULT: _simpleCliLogger,
+        CLI: _simpleCliLogger
+    }
 };

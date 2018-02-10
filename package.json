@@ -1,13 +1,19 @@
 {
   "name": "logging-facility",
-  "version": "1.1.0",
+  "version": "2.0.0",
   "description": "Logging Abstraction Layer for easy backend switching",
   "keywords": [
     "logger",
     "syslog",
+    "log",
+    "cli",
+    "console",
     "abstraction",
     "utility"
   ],
+  "engines": {
+    "node": ">=6.4"
+  },
   "homepage": "https://github.com/AndiDittrich/Node.Logging-Facility",
   "bugs": "https://github.com/AndiDittrich/Node.Logging-Facility/issues",
   "repository": "AndiDittrich/Node.Logging-Facility",
@@ -16,8 +22,9 @@
     "lib"
   ],
   "main": "./logging-facility.js",
-  "author": "Andi Dittrich (http://andidittrich.de)",
+  "author": "Andi Dittrich (https://andidittrich.de)",
   "license": "MIT",
   "dependencies": {
+    "colors": "^1.1.2"
   }
 }
