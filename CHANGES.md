@@ -1,3 +1,6 @@
+### 2.0.1 ###
+* Bugfix: application entry file was not listed in `files`
+
 ### 2.0.0 ###
 * Added: examples + docs
 * Added: new colorized cli logging backend
